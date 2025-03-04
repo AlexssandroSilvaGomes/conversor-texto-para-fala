@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Conversor de Texto para Áudio</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>🔊 Texto para Fala</h1>
+        <div class="card">
+            <form id="converterForm">
+                <div class="form-group">
+                    <textarea id="text" name="text" rows="5" placeholder="Digite seu texto aqui..."></textarea>
+                </div>
+                
+                <div class="settings">
+                    <div class="form-group">
+                        <label for="lang">Idioma</label>
+                        <select id="lang" name="lang" class="modern-select">
+                            <option value="en">🇺🇸 Inglês</option>
+                            <option value="pt">🇧🇷 Português</option>
+                            <option value="es">🇪🇸 Espanhol</option>
+                            <option value="fr">🇫🇷 Francês</option>
+                            <option value="de">🇩🇪 Alemão</option>
+                            <option value="it">🇮🇹 Italiano</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="accent">Sotaque</label>
+                        <select id="accent" name="accent" class="modern-select">
+                        </select>
+                    </div>
+                
+                    <div class="form-group">
+                        <label for="speed">Velocidade</label>
+                        <select id="speed" name="speed" class="modern-select">
+                            <option value="normal">Normal</option>
+                            <option value="slow">Lenta</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="controls">
+                    <div class="form-group range-group">
+                        <label for="volume">Volume</label>
+                        <input type="range" id="volume" min="0" max="1" step="0.1" value="1">
+                        <span id="volumeValue">1.0</span>
+                    </div>
+
+                    <div class="form-group range-group">
+                        <label for="pitch">Tom</label>
+                        <input type="range" id="pitch" min="0.5" max="2" step="0.1" value="1">
+                        <span id="pitchValue">1.0</span>
+                    </div>
+                </div>
+
+                <button type="submit" class="glow-button">
+                    <span class="button-text">Converter</span>
+                </button>
+            </form>
+
+            <div id="result" class="hidden">
+                <div class="audio-preview">
+                    <audio id="audioPlayer" controls></audio>
+                    <a id="downloadLink" class="download-btn" href="#" download>
+                        ⬇️ Download MP3
+                    </a>
+                </div>
+            </div>
+
+            <div id="error" class="hidden error-message"></div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+</body>
+</html>

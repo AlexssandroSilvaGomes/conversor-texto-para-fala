@@ -6,7 +6,7 @@ import time
 class TextToSpeechConverter:
     def __init__(self, output_folder='../frontend/static/audio'):
         self.output_folder = output_folder
-        self.supported_voices = {
+        self.supported_accents = {
             'en': {
                 'us': 'com',        # Inglês Americano
                 'uk': 'co.uk'       # Inglês Britânico

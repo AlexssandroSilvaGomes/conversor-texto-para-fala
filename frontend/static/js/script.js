@@ -52,17 +52,17 @@ function updateAccents() {
     const lang = document.getElementById('lang').value;
     const accentSelect = document.getElementById('accent');
     const accents = accentMap[lang] || {};
-    
+
     // Salvar o sotaque selecionado anteriormente
     const previousValue = accentSelect.value;
-    
+
     // Gerar novas opções
     const options = Object.entries(accents).map(([value, label]) => {
         return `<option value="${value}" ${value === previousValue ? 'selected' : ''}>${label}</option>`;
     }).join('');
-    
+
     accentSelect.innerHTML = options || '<option value="">Nenhum sotaque disponível</option>';
-    
+
     // Forçar atualização visual
     if (!accentSelect.value && options.length > 0) {
         accentSelect.value = Object.keys(accents)[0];
@@ -73,17 +73,17 @@ function updateAccents() {
 document.addEventListener('DOMContentLoaded', () => {
     const audioController = new AudioController();
     updateAccents();
-    
+
     // Adicionar listener para mudança de idioma
     document.getElementById('lang').addEventListener('change', updateAccents);
 
     document.getElementById('converterForm').addEventListener('submit', async (e) => {
         e.preventDefault();
-        
+
         const formData = new FormData(e.target);
         const resultDiv = document.getElementById('result');
         const errorDiv = document.getElementById('error');
-        
+
         resultDiv.classList.add('hidden');
         errorDiv.classList.add('hidden');
 
@@ -92,21 +92,38 @@ document.addEventListener('DOMContentLoaded', () => {
                 method: 'POST',
                 body: formData
             });
+            const rawBody = await response.text();
+            let data = {};
 
-            const data = await response.json();
-            
+            if (rawBody) {
+                try {
+                    data = JSON.parse(rawBody);
+                } catch {
+                    throw new Error(`Resposta inválida do servidor (HTTP ${response.status}).`);
+                }
+            }
+
             if (response.ok) {
+                if (!data.filename) {
+                    throw new Error('Servidor não retornou o nome do arquivo de áudio.');
+                }
+
                 const audioPlayer = document.getElementById('audioPlayer');
                 const downloadLink = document.getElementById('downloadLink');
-                
+
                 audioPlayer.src = `/static/audio/${data.filename}`;
                 downloadLink.href = `/static/audio/${data.filename}`;
-                
+
                 resultDiv.classList.remove('hidden');
                 audioController.setVolume(document.getElementById('volume').value);
                 audioController.setPlaybackRate(document.getElementById('pitch').value);
             } else {
-                throw new Error(data.error || 'Erro desconhecido');
+                if (response.status === 405) {
+                    throw new Error('Endpoint /convert não aceita POST neste servidor. Abra a aplicação pela URL do Flask (http://127.0.0.1:5000).');
+                }
+
+                const serverMessage = data.error || rawBody || 'Erro desconhecido';
+                throw new Error(`Erro ao converter áudio (HTTP ${response.status}): ${serverMessage}`);
             }
         } catch (error) {
             errorDiv.textContent = error.message;

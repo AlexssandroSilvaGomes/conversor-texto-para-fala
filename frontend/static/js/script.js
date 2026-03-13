@@ -28,22 +28,24 @@ class AudioController {
     }
 }
 
+let currentAudioUrl = null;
+
 const accentMap = {
     'en': {
-        'us': '🇺🇸 Americano',
-        'uk': '🇬🇧 Britânico'
+        'us': 'Americano',
+        'uk': 'Britanico'
     },
     'pt': {
-        'br': '🇧🇷 Brasileiro',
-        'pt': '🇵🇹 Europeu'
+        'br': 'Brasileiro',
+        'pt': 'Europeu'
     },
     'es': {
-        'es': '🇪🇸 Espanhol',
-        'mx': '🇲🇽 Mexicano'
+        'es': 'Espanhol',
+        'mx': 'Mexicano'
     },
     'fr': {
-        'fr': '🇫🇷 Francês',
-        'ca': '🇨🇦 Canadense'
+        'fr': 'Frances',
+        'ca': 'Canadense'
     }
 };
 
@@ -56,14 +58,14 @@ function updateAccents() {
     // Salvar o sotaque selecionado anteriormente
     const previousValue = accentSelect.value;
 
-    // Gerar novas opções
+    // Gerar novas opcoes
     const options = Object.entries(accents).map(([value, label]) => {
         return `<option value="${value}" ${value === previousValue ? 'selected' : ''}>${label}</option>`;
     }).join('');
 
-    accentSelect.innerHTML = options || '<option value="">Nenhum sotaque disponível</option>';
+    accentSelect.innerHTML = options || '<option value="">Nenhum sotaque disponivel</option>';
 
-    // Forçar atualização visual
+    // Forcar atualizacao visual
     if (!accentSelect.value && options.length > 0) {
         accentSelect.value = Object.keys(accents)[0];
     }
@@ -74,7 +76,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const audioController = new AudioController();
     updateAccents();
 
-    // Adicionar listener para mudança de idioma
+    // Adicionar listener para mudanca de idioma
     document.getElementById('lang').addEventListener('change', updateAccents);
 
     document.getElementById('converterForm').addEventListener('submit', async (e) => {
@@ -92,44 +94,61 @@ document.addEventListener('DOMContentLoaded', () => {
                 method: 'POST',
                 body: formData
             });
-            const rawBody = await response.text();
-            let data = {};
-
-            if (rawBody) {
-                try {
-                    data = JSON.parse(rawBody);
-                } catch {
-                    throw new Error(`Resposta inválida do servidor (HTTP ${response.status}).`);
-                }
-            }
 
             if (response.ok) {
-                if (!data.filename) {
-                    throw new Error('Servidor não retornou o nome do arquivo de áudio.');
+                const audioBlob = await response.blob();
+                if (!audioBlob.size) {
+                    throw new Error('Servidor retornou um audio vazio.');
                 }
 
                 const audioPlayer = document.getElementById('audioPlayer');
                 const downloadLink = document.getElementById('downloadLink');
 
-                audioPlayer.src = `/static/audio/${data.filename}`;
-                downloadLink.href = `/static/audio/${data.filename}`;
+                if (currentAudioUrl) {
+                    URL.revokeObjectURL(currentAudioUrl);
+                }
+
+                currentAudioUrl = URL.createObjectURL(audioBlob);
+
+                audioPlayer.src = currentAudioUrl;
+                downloadLink.href = currentAudioUrl;
+                downloadLink.download = `audio_${Date.now()}.mp3`;
 
                 resultDiv.classList.remove('hidden');
                 audioController.setVolume(document.getElementById('volume').value);
                 audioController.setPlaybackRate(document.getElementById('pitch').value);
             } else {
                 if (response.status === 405) {
-                    throw new Error('Endpoint /convert não aceita POST neste servidor. Abra a aplicação pela URL do Flask (http://127.0.0.1:5000).');
+                    throw new Error('Endpoint /convert nao aceita POST neste servidor. Abra a aplicacao pela URL do Flask (http://127.0.0.1:5000).');
                 }
 
-                const serverMessage = data.error || rawBody || 'Erro desconhecido';
-                throw new Error(`Erro ao converter áudio (HTTP ${response.status}): ${serverMessage}`);
+                let serverMessage = 'Erro desconhecido';
+                const contentType = response.headers.get('content-type') || '';
+
+                if (contentType.includes('application/json')) {
+                    const errorJson = await response.json();
+                    serverMessage = errorJson.error || serverMessage;
+                } else {
+                    const errorText = await response.text();
+                    if (errorText) {
+                        serverMessage = errorText;
+                    }
+                }
+
+                throw new Error(`Erro ao converter audio (HTTP ${response.status}): ${serverMessage}`);
             }
         } catch (error) {
             errorDiv.textContent = error.message;
             errorDiv.classList.remove('hidden');
         }
     });
+});
+
+window.addEventListener('beforeunload', () => {
+    if (currentAudioUrl) {
+        URL.revokeObjectURL(currentAudioUrl);
+        currentAudioUrl = null;
+    }
 });
 
 window.addEventListener('resize', () => {

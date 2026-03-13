@@ -1,11 +1,8 @@
 from gtts import gTTS
-import os
 from io import BytesIO
-import time
 
 class TextToSpeechConverter:
-    def __init__(self, output_folder='../frontend/static/audio'):
-        self.output_folder = output_folder
+    def __init__(self):
         self.supported_accents = {
             'en': {
                 'us': 'com',        # Inglês Americano
@@ -24,25 +21,18 @@ class TextToSpeechConverter:
                 'ca': 'ca'          # Francês Canadense
             }
         }
-        os.makedirs(self.output_folder, exist_ok=True)
 
     def get_available_voices(self, lang):
-        return self.supported_voices.get(lang, {})
+        return self.supported_accents.get(lang, {})
 
     def convert_text_to_audio(self, text, lang='en', accent='us', slow=False):
-        """Converte texto em áudio com seleção de voz"""
+        """Converte texto em áudio e retorna um buffer MP3 em memória."""
         try:
             tld = self.supported_accents.get(lang, {}).get(accent, 'com')
             tts = gTTS(text=text, lang=lang, tld=tld, slow=slow)
-            return tts
+            audio_buffer = BytesIO()
+            tts.write_to_fp(audio_buffer)
+            audio_buffer.seek(0)
+            return audio_buffer
         except Exception as e:
             raise RuntimeError(f"Erro na conversão: {str(e)}")
-
-    def save_audio(self, tts_object):
-        """Salva o áudio em arquivo MP3"""
-        timestamp = str(int(time.time()))
-        filename = f"audio_{timestamp}.mp3"
-        filepath = os.path.join(self.output_folder, filename)
-        
-        tts_object.save(filepath)
-        return filename

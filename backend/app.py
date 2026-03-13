@@ -1,6 +1,5 @@
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request, jsonify, send_file
 from text_to_speech import TextToSpeechConverter
-import os
 
 app = Flask(__name__, template_folder='../frontend/templates', static_folder='../frontend/static')
 
@@ -21,9 +20,19 @@ def convert_text():
 
     try:
         converter = TextToSpeechConverter()
-        audio = converter.convert_text_to_audio(text, lang=lang, accent=accent, slow=speed)
-        filename = converter.save_audio(audio)
-        return jsonify({'filename': filename})
+        audio_buffer = converter.convert_text_to_audio(text, lang=lang, accent=accent, slow=speed)
+
+        response = send_file(
+            audio_buffer,
+            mimetype='audio/mpeg',
+            as_attachment=False,
+            download_name='audio.mp3'
+        )
+
+        response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
+        response.headers['Pragma'] = 'no-cache'
+        response.headers['Expires'] = '0'
+        return response
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 

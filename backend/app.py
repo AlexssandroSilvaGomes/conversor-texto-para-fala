@@ -1,5 +1,6 @@
 from flask import Flask, render_template, request, jsonify, send_file
 from text_to_speech import TextToSpeechConverter
+import os
 
 app = Flask(__name__, template_folder='../frontend/templates', static_folder='../frontend/static')
 
@@ -36,5 +37,5 @@ def convert_text():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-if __name__ == '__main__':
-    app.run(debug=True)
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 10000)))
